@@ -16,5 +16,6 @@
     "editor.defaultFormatter": "vscode.css-language-features"
   },
   "js/ts.format.semicolons": "remove",
-  "js/ts.preferences.quoteStyle": "single"
+  "js/ts.preferences.quoteStyle": "single",
+  "cSpell.words": ["naokimat"]
 }
