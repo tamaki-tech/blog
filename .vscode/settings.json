@@ -17,5 +17,15 @@
   },
   "js/ts.format.semicolons": "remove",
   "js/ts.preferences.quoteStyle": "single",
-  "cSpell.words": ["Matsumoto", "Naoki", "naokimat"]
+  "cSpell.words": [
+    "hatena",
+    "iconimage",
+    "lapras",
+    "Matsumoto",
+    "Naoki",
+    "naokimat",
+    "qiita",
+    "teratail",
+    "zenn"
+  ]
 }

@@ -11,6 +11,9 @@ importers:
       hono:
         specifier: ^4.12.15
         version: 4.12.15
+      ky:
+        specifier: ^2.0.2
+        version: 2.0.2
     devDependencies:
       '@hono/vite-build':
         specifier: ^1.2.0
@@ -906,6 +909,10 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
 
+  ky@2.0.2:
+    resolution: {integrity: sha512-/GmXpo9F9W+f8n4Ivr2iH+7h7wL7jLbLKWkMlpflcCRb6kGjBfTlASEXaZ9qUgNTn4VgS0P2pwxxzQ4EM6Ulgg==}
+    engines: {node: '>=22'}
+
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
     engines: {node: '>= 12.0.0'}
@@ -1709,6 +1716,8 @@ snapshots:
   jiti@2.6.1: {}
 
   kleur@4.1.5: {}
+
+  ky@2.0.2: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true

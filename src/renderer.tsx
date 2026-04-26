@@ -1,7 +1,12 @@
 import { jsxRenderer } from 'hono/jsx-renderer'
+import { cloneElement, isValidElement } from 'hono/jsx'
 import { Layout } from './components/templates/Layout'
+import { laprasClient } from './lib/laprasClient'
 
-export const renderer = jsxRenderer(({ children }) => {
+export const renderer = jsxRenderer(async ({ children }) => {
+  const profile = await laprasClient.fetchProfile().catch(() => null)
+  const page = isValidElement(children) ? cloneElement(children, { profile }) : children
+
   return (
     <html>
       <head>
@@ -14,7 +19,7 @@ export const renderer = jsxRenderer(({ children }) => {
         )}
       </head>
       <body>
-        <Layout>{children}</Layout>
+        <Layout profile={profile}>{page}</Layout>
       </body>
     </html>
   )
