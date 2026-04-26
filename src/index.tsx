@@ -1,17 +1,18 @@
 import { Hono } from 'hono'
 import { renderer } from './renderer'
-import { Heading } from './components/atoms/Heading'
+import { TopPage } from './pages/TopPage'
+import { ProfilePage } from './pages/ProfilePage'
 
 const app = new Hono()
 
 app.use(renderer)
 
 app.get('/', (c) => {
-  return c.render(
-    <main class='mx-auto max-w-5xl px-6 py-12'>
-      <Heading level={1} size='3xl' className="font-bold">naokimat Blog</Heading>
-    </main >
-  )
+  return c.render(<TopPage />)
+})
+
+app.get('/profile', (c) => {
+  return c.render(<ProfilePage />)
 })
 
 export default app

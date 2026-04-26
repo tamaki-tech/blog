@@ -1,4 +1,5 @@
 import { jsxRenderer } from 'hono/jsx-renderer'
+import { Layout } from './components/templates/Layout'
 
 export const renderer = jsxRenderer(({ children }) => {
   return (
@@ -12,7 +13,9 @@ export const renderer = jsxRenderer(({ children }) => {
           <script type="module" src="/src/style.css"></script>
         )}
       </head>
-      <body>{children}</body>
+      <body>
+        <Layout>{children}</Layout>
+      </body>
     </html>
   )
 })
