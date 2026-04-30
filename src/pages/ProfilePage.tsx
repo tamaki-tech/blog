@@ -13,20 +13,20 @@ export const ProfilePage: FC<Props> = ({ profile }) => {
         Profile
       </Heading>
       <div class="mt-4 space-y-4">
-        <p>{profile?.description ?? 'hello profile page!'}</p>
+        <p>{profile?.getDescription() ?? 'hello profile page!'}</p>
         {profile && (
           <dl class="grid gap-4 sm:grid-cols-3">
             <div>
               <dt class="text-sm text-slate-500">Engineering</dt>
-              <dd class="text-2xl font-bold">{profile.e_score}</dd>
+              <dd class="text-2xl font-bold">{profile.getEngineeringScore()}</dd>
             </div>
             <div>
               <dt class="text-sm text-slate-500">Business</dt>
-              <dd class="text-2xl font-bold">{profile.b_score}</dd>
+              <dd class="text-2xl font-bold">{profile.getBusinessScore()}</dd>
             </div>
             <div>
               <dt class="text-sm text-slate-500">Influence</dt>
-              <dd class="text-2xl font-bold">{profile.i_score}</dd>
+              <dd class="text-2xl font-bold">{profile.getInfluenceScore()}</dd>
             </div>
           </dl>
         )}

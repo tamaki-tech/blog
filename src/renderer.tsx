@@ -4,7 +4,7 @@ import { Layout } from './components/templates/Layout'
 import { laprasClient } from './lib/laprasClient'
 
 export const renderer = jsxRenderer(async ({ children }) => {
-  const profile = await laprasClient.fetchProfile().catch(() => null)
+  const profile = await laprasClient.fetchProfileModel().catch(() => null)
   const page = isValidElement(children) ? cloneElement(children, { profile }) : children
 
   return (

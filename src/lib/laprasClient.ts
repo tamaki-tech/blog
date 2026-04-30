@@ -1,73 +1,20 @@
 import ky from 'ky'
+import {
+  LaprasProfile as LaprasProfileModel,
+  type LaprasActivityJson,
+  type LaprasArticleJson,
+  type LaprasEventJson,
+  type LaprasProfileJson,
+  type LaprasRepositoryJson,
+  type LaprasRepositoryLanguageJson,
+} from '../domain/laprasProfile'
 
-export type LaprasArticle = {
-  title: string
-  url: string
-  tags: string[]
-  headlines: string[]
-  stockers_count: number
-  updated_at: string
-}
-
-export type LaprasRepositoryLanguage = {
-  name: string
-  bytes: number
-}
-
-export type LaprasRepository = {
-  id: number
-  title: string
-  url: string
-  is_oss: boolean
-  is_fork: boolean
-  is_owner: boolean
-  description: string
-  stargazers_count: number
-  stargazers_url: string
-  forks: number
-  contributors_count: number
-  contributors_url: string
-  contributions: number
-  contributions_url: string
-  language: string
-  languages: LaprasRepositoryLanguage[]
-}
-
-export type LaprasEvent = {
-  title: string
-  url: string
-  status: number
-  date: string
-  is_presenter: boolean
-  is_organizer: boolean
-}
-
-export type LaprasActivity = {
-  title: string
-  url: string
-  date: string
-  type: string
-}
-
-export type LaprasProfile = {
-  name: string
-  description: string
-  e_score: number
-  b_score: number
-  i_score: number
-  iconimage_url: string
-  enable_it_engineer: boolean
-  qiita_articles: LaprasArticle[]
-  zenn_articles: LaprasArticle[]
-  blog_articles: LaprasArticle[]
-  note_articles: LaprasArticle[]
-  hatena_articles: LaprasArticle[]
-  speaker_deck_slides: unknown[]
-  github_repositories: LaprasRepository[]
-  teratail_replies: unknown[]
-  events: LaprasEvent[]
-  activities: LaprasActivity[]
-}
+export type LaprasArticle = LaprasArticleJson
+export type LaprasRepositoryLanguage = LaprasRepositoryLanguageJson
+export type LaprasRepository = LaprasRepositoryJson
+export type LaprasEvent = LaprasEventJson
+export type LaprasActivity = LaprasActivityJson
+export type LaprasProfile = LaprasProfileModel
 
 const client = ky.create({
   prefix: 'https://lapras.com/public',
@@ -78,5 +25,8 @@ const client = ky.create({
 })
 
 export const laprasClient = {
-  fetchProfile: () => client.get('IPU4HTA.json').json<LaprasProfile>(),
+  fetchProfileModel: async (): Promise<LaprasProfileModel> => {
+    const json = await client.get('IPU4HTA.json').json<LaprasProfileJson>()
+    return LaprasProfileModel.fromJson(json)
+  },
 }
