@@ -1,11 +1,13 @@
 import { jsxRenderer } from 'hono/jsx-renderer'
 import { cloneElement, isValidElement } from 'hono/jsx'
 import { Layout } from './components/templates/Layout'
+import { careerProfileClient } from './lib/careerProfileClient'
 import { laprasClient } from './lib/laprasClient'
 
 export const renderer = jsxRenderer(async ({ children }) => {
   const profile = await laprasClient.fetchProfileModel().catch(() => null)
-  const page = isValidElement(children) ? cloneElement(children, { profile }) : children
+  const careerProfile = await careerProfileClient.fetchProfileModel().catch(() => null)
+  const page = isValidElement(children) ? cloneElement(children, { profile, careerProfile }) : children
 
   return (
     <html>

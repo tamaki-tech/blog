@@ -13,6 +13,7 @@ export const PageHeader: FC = () => {
         <nav class="flex items-center gap-8 text-sm text-slate-700">
           <Link href="/profile">profile</Link>
           <Link href="/profile">products</Link>
+          <Link href="/events">events</Link>
           <Link href="/articles">articles</Link>
         </nav>
       </div>

@@ -1,5 +1,6 @@
 import type { FC } from 'hono/jsx'
 import { Badge } from '../atoms/Badge'
+import { ExternalLinkIcon } from '../atoms/ExternalLinkIcon'
 import { Heading } from '../atoms/Heading'
 import { Link } from '../atoms/Link'
 
@@ -28,8 +29,9 @@ export const ArticleCard: FC<Props> = ({ article }) => {
         <time>{article.publishedAt}</time>
       </div>
       <Heading level={4} size="md" className="font-semibold leading-7 text-slate-950">
-        <Link href={article.url} className="text-slate-950 hover:text-slate-700">
-          {article.title}
+        <Link href={article.url} className="inline text-slate-950 hover:text-slate-700">
+          {article.title}{' '}
+          <ExternalLinkIcon className="inline-block h-4 w-4 align-[-0.125em]" />
         </Link>
       </Heading>
       <div class="mt-auto pt-5">

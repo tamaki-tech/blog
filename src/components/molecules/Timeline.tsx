@@ -1,5 +1,6 @@
 import type { FC } from 'hono/jsx'
 import { ButtonLink } from '../atoms/ButtonLink'
+import { ExternalLinkIcon } from '../atoms/ExternalLinkIcon'
 import { Heading } from '../atoms/Heading'
 import { Link } from '../atoms/Link'
 
@@ -42,8 +43,9 @@ export const Timeline: FC<Props> = ({ items, className, displayLimit, moreLink }
               <time class="text-sm font-normal leading-none text-slate-500">{item.date}</time>
               <Heading level={3} size="lg" className="my-2 font-semibold text-slate-950">
                 {item.link ? (
-                  <Link href={item.link.href} className="text-slate-950 hover:text-slate-700">
-                    {item.title}
+                  <Link href={item.link.href} className="inline text-slate-950 hover:text-slate-700">
+                    {item.title}{' '}
+                    <ExternalLinkIcon className="inline-block h-4 w-4 align-[-0.125em]" />
                   </Link>
                 ) : (
                   item.title
