@@ -1,4 +1,4 @@
-import { FC, PropsWithChildren } from 'hono/jsx'
+import type { FC, PropsWithChildren } from 'hono/jsx'
 
 type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
 type HeadingSize = '3xl' | '2xl' | 'xl' | 'lg' | 'md' | 'sm' | 'xs'

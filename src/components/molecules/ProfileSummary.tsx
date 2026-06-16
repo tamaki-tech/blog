@@ -20,7 +20,7 @@ export const ProfileSummary: FC<Props> = ({ profile, showMoreLink = true, showSk
         {profile?.getIconImageUrl() && (
           <img
             src={profile.getIconImageUrl()}
-            alt="Profile Picture"
+            alt="Profile avatar"
             class="mx-auto mb-4 h-40 w-40 rounded-full"
           />
         )}

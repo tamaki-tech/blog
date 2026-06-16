@@ -1,0 +1,92 @@
+name: Loop Agent Verifier
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare logs
+        run: mkdir -p logs
+
+      - name: Typecheck
+        id: typecheck
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run typecheck 2>&1 | tee logs/typecheck.log
+
+      - name: Lint
+        id: lint
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run lint 2>&1 | tee logs/lint.log
+
+      - name: Test
+        id: test
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run test 2>&1 | tee logs/test.log
+
+      - name: Build
+        id: build
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run build 2>&1 | tee logs/build.log
+
+      - name: Write verifier summary
+        if: always()
+        run: |
+          {
+            echo "## Loop Agent Verifier"
+            echo
+            echo "| Check | Result |"
+            echo "| --- | --- |"
+            echo "| typecheck | ${{ steps.typecheck.outcome }} |"
+            echo "| lint | ${{ steps.lint.outcome }} |"
+            echo "| test | ${{ steps.test.outcome }} |"
+            echo "| build | ${{ steps.build.outcome }} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload verifier logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loop-agent-verifier-logs
+          path: logs/
+
+      - name: Gate verifier
+        if: always()
+        run: |
+          if [ "${{ steps.typecheck.outcome }}" != "success" ] ||
+             [ "${{ steps.lint.outcome }}" != "success" ] ||
+             [ "${{ steps.test.outcome }}" != "success" ] ||
+             [ "${{ steps.build.outcome }}" != "success" ]; then
+            exit 1
+          fi

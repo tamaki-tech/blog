@@ -10,7 +10,7 @@ export const renderer = jsxRenderer(async ({ children }) => {
   const page = isValidElement(children) ? cloneElement(children, { profile, careerProfile }) : children
 
   return (
-    <html>
+    <html lang="ja">
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -1,0 +1,44 @@
+name: Agent タスク
+description: Agent に渡す、境界を絞ったタスクを定義します。
+title: "[Agent] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Agent に渡せる状態になったら、`agent:run` ラベルを付けてください。コード変更後の検証は PR 上の verifier workflow で実行されます。
+  - type: textarea
+    id: goal
+    attributes:
+      label: 目標
+      description: 変更したい内容と、ユーザーから見える完了状態を書いてください。
+      placeholder: 新しい記事カードを追加する
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: 対象範囲
+      description: Agent が変更してよいファイルや領域を列挙してください。
+      placeholder: src/pages/articleCardItems.ts
+    validations:
+      required: true
+  - type: checkboxes
+    id: acceptance
+    attributes:
+      label: 完了条件
+      options:
+        - label: pnpm run typecheck
+          required: true
+        - label: pnpm run lint
+          required: true
+        - label: pnpm run test
+          required: true
+        - label: pnpm run build
+          required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: 対象外
+      description: Agent に変更してほしくない内容を書いてください。
+      placeholder: Cloudflare のデプロイ設定は変更しない
