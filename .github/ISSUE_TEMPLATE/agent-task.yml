@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Agent に渡せる状態になったら、`agent:run` ラベルを付けてください。コード変更後の検証は PR 上の verifier workflow で実行されます。
+        Agent に渡せる状態になったら、`agent:run` ラベルを付けてください。Intake が実装とPR作成前検証を行い、作成されたPR上でも verifier workflow が実行されます。
   - type: textarea
     id: goal
     attributes:
