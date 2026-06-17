@@ -68,6 +68,7 @@ jobs:
         uses: openai/codex-action@v1
         with:
           openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          model: gpt-5-mini
           prompt-file: ${{ runner.temp }}/codex-prompt.md
           output-file: ${{ runner.temp }}/codex-output.md
           sandbox: workspace-write
