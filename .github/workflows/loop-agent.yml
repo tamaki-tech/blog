@@ -4,32 +4,336 @@ on:
   issues:
     types: [labeled]
 
-permissions:
-  issues: write
+concurrency:
+  group: loop-agent-${{ github.event.issue.number }}
+  cancel-in-progress: false
 
 jobs:
-  intake:
-    name: Intake
+  generate_patch:
+    name: Generate patch
     if: github.event.label.name == 'agent:run'
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      has_patch: ${{ steps.diff.outputs.has_patch }}
+      codex_outcome: ${{ steps.codex.outcome }}
 
     steps:
-      - name: Comment intake status
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Codex prompt
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_URL: ${{ github.event.issue.html_url }}
+        run: |
+          {
+            cat .github/agent/prompts/implementer.md
+            echo
+            echo "## Issue Context"
+            echo
+            echo "Issue: #$ISSUE_NUMBER"
+            echo "URL: $ISSUE_URL"
+            echo
+            echo "### Title"
+            printf '%s\n' "$ISSUE_TITLE"
+            echo
+            echo "### Body"
+            printf '%s\n' "$ISSUE_BODY"
+          } > "$RUNNER_TEMP/codex-prompt.md"
+
+      - name: Run Codex implementer
+        id: codex
+        continue-on-error: true
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: ${{ runner.temp }}/codex-prompt.md
+          output-file: ${{ runner.temp }}/codex-output.md
+          sandbox: workspace-write
+          safety-strategy: drop-sudo
+          codex-args: '["--ephemeral"]'
+
+      - name: Create patch artifact
+        id: diff
+        if: always()
+        run: |
+          git add -N .
+          git diff --binary HEAD > "$RUNNER_TEMP/codex.patch"
+          if [ -s "$RUNNER_TEMP/codex.patch" ]; then
+            echo "has_patch=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_patch=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Upload Codex artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loop-agent-codex-output
+          path: |
+            ${{ runner.temp }}/codex-output.md
+            ${{ runner.temp }}/codex.patch
+          if-no-files-found: ignore
+
+      - name: Comment when Codex fails
+        if: always() && steps.codex.outcome != 'success'
         uses: actions/github-script@v7
         with:
           script: |
-            const body = [
-              'Loop Agent Intake がタスクを受け付けました。',
-              '',
-              '現時点では実装 Agent は未接続です。コード変更後の検証は、PR 作成または更新時に `Loop Agent Verifier` が実行します。',
-              '',
-              `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
-            ].join('\n')
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                'Loop Agent Intake は Codex 実行で失敗しました。',
+                '',
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+                '',
+                'artifact に `codex-output.md` または `codex.patch` があれば確認してください。',
+              ].join('\n'),
+            })
+
+      - name: Comment when no patch was generated
+        if: steps.codex.outcome == 'success' && steps.diff.outputs.has_patch != 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                'Loop Agent Intake は Codex 実行を完了しましたが、コード変更は生成されませんでした。',
+                '',
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              ].join('\n'),
+            })
+
+      - name: Gate Codex execution
+        if: always()
+        run: |
+          if [ "${{ steps.codex.outcome }}" != "success" ]; then
+            exit 1
+          fi
+
+  open_pr:
+    name: Open draft PR
+    needs: generate_patch
+    if: needs.generate_patch.outputs.has_patch == 'true' && needs.generate_patch.outputs.codex_outcome == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download Codex patch
+        uses: actions/download-artifact@v4
+        with:
+          name: loop-agent-codex-output
+          path: loop-agent-artifacts
+
+      - name: Apply Codex patch
+        id: apply_patch
+        continue-on-error: true
+        run: git apply --index loop-agent-artifacts/codex.patch
+
+      - name: Setup pnpm
+        if: steps.apply_patch.outcome == 'success'
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        if: steps.apply_patch.outcome == 'success'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        if: steps.apply_patch.outcome == 'success'
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare logs
+        if: steps.apply_patch.outcome == 'success'
+        run: mkdir -p logs
+
+      - name: Typecheck
+        id: typecheck
+        if: steps.apply_patch.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run typecheck 2>&1 | tee logs/typecheck.log
+
+      - name: Lint
+        id: lint
+        if: steps.apply_patch.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run lint 2>&1 | tee logs/lint.log
+
+      - name: Test
+        id: test
+        if: steps.apply_patch.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run test 2>&1 | tee logs/test.log
+
+      - name: Build
+        id: build
+        if: steps.apply_patch.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          pnpm run build 2>&1 | tee logs/build.log
+
+      - name: Upload validation logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loop-agent-validation-logs
+          path: logs/
+          if-no-files-found: ignore
+
+      - name: Create draft PR
+        id: create_pr
+        if: steps.apply_patch.outcome == 'success' && steps.typecheck.outcome == 'success' && steps.lint.outcome == 'success' && steps.test.outcome == 'success' && steps.build.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          branch="agent/issue-${ISSUE_NUMBER}-${RUN_ID}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git commit -m "Implement agent task #${ISSUE_NUMBER}"
+          git push origin "$branch"
+
+          {
+            echo "## Summary"
+            echo
+            echo "Codex generated this change from issue #${ISSUE_NUMBER}: ${ISSUE_TITLE}"
+            echo
+            echo "## Source issue"
+            echo
+            echo "Related #${ISSUE_NUMBER}"
+            echo
+            echo "## Validation"
+            echo
+            echo "- \`pnpm run typecheck\`"
+            echo "- \`pnpm run lint\`"
+            echo "- \`pnpm run test\`"
+            echo "- \`pnpm run build\`"
+            echo
+            echo "This is a draft PR and requires human review before merge."
+          } > pr-body.md
+
+          pr_url="$(gh pr create \
+            --draft \
+            --base "${{ github.event.repository.default_branch }}" \
+            --head "$branch" \
+            --title "[agent] ${ISSUE_TITLE}" \
+            --body-file pr-body.md)"
+
+          gh pr edit "$pr_url" --add-label auto-generated || true
+
+          echo "pr_url=$pr_url" >> "$GITHUB_OUTPUT"
+
+      - name: Comment PR URL
+        if: steps.create_pr.outcome == 'success'
+        uses: actions/github-script@v7
+        env:
+          PR_URL: ${{ steps.create_pr.outputs.pr_url }}
+        with:
+          script: |
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: [
+                'Loop Agent Intake が draft PR を作成しました。',
+                '',
+                process.env.PR_URL,
+              ].join('\n'),
+            })
+
+      - name: Comment validation failure
+        if: always() && steps.create_pr.outcome != 'success'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const checks = {
+              apply_patch: '${{ steps.apply_patch.outcome }}',
+              typecheck: '${{ steps.typecheck.outcome }}',
+              lint: '${{ steps.lint.outcome }}',
+              test: '${{ steps.test.outcome }}',
+              build: '${{ steps.build.outcome }}',
+            }
+            const rows = Object.entries(checks)
+              .map(([name, outcome]) => `| ${name} | ${outcome} |`)
+              .join('\n')
 
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: context.issue.number,
-              body,
+              body: [
+                'Loop Agent Intake は変更を生成しましたが、PR 作成前の検証に失敗しました。',
+                '',
+                '| Check | Result |',
+                '| --- | --- |',
+                rows,
+                '',
+                `Run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+              ].join('\n'),
             })
+
+            try {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                labels: ['needs-human'],
+              })
+            } catch (error) {
+              core.warning(`Could not add needs-human label: ${error.message}`)
+            }
+
+      - name: Gate PR creation
+        if: always()
+        run: |
+          if [ "${{ steps.create_pr.outcome }}" != "success" ]; then
+            exit 1
+          fi

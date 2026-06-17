@@ -43,7 +43,7 @@ When adding tests that require local services or environment variables, document
 
 Keep the intake and verification triggers separate:
 
-- `Loop Agent Intake` (`.github/workflows/loop-agent.yml`) runs only when an issue receives the `agent:run` label. It records that the agent task was accepted. It must not run lint, tests, or builds because an issue label does not represent a code diff.
+- `Loop Agent Intake` (`.github/workflows/loop-agent.yml`) runs only when an issue receives the `agent:run` label. It runs Codex with the issue as task input, creates a patch artifact, verifies it, and opens a draft PR only when `pnpm run typecheck`, `pnpm run lint`, `pnpm run test`, and `pnpm run build` pass.
 - `Loop Agent Verifier` (`.github/workflows/loop-verifier.yml`) runs on pull request creation or updates, and can also be run manually with `workflow_dispatch`. It verifies the actual code diff with `pnpm run typecheck`, `pnpm run lint`, `pnpm run test`, and `pnpm run build`.
 
 Use the `Agent タスク` issue template to describe goal, scope, acceptance criteria, and out-of-scope items before applying `agent:run`.
