@@ -17,6 +17,7 @@ describe('routes', () => {
   it.each([
     { path: '/', expectedText: 'About Me' },
     { path: '/profile', expectedText: 'Profile' },
+    { path: '/products', expectedText: 'Products' },
     { path: '/events', expectedText: 'Events' },
     { path: '/articles', expectedText: 'Articles' }
   ])('renders $path', async ({ path, expectedText }) => {
