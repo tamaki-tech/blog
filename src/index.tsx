@@ -4,6 +4,7 @@ import { TopPage } from './pages/TopPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { EventsPage } from './pages/EventsPage'
 import { ArticlesPage } from './pages/ArticlesPage'
+import { ProductsPage } from './pages/ProductsPage'
 
 const app = new Hono()
 
@@ -15,6 +16,10 @@ app.get('/', (c) => {
 
 app.get('/profile', (c) => {
   return c.render(<ProfilePage />)
+})
+
+app.get('/products', (c) => {
+  return c.render(<ProductsPage />)
 })
 
 app.get('/events', (c) => {

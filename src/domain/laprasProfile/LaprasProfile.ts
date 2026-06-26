@@ -270,6 +270,34 @@ export class LaprasRepository {
     })
   }
 
+  getTitle() {
+    return this.title
+  }
+
+  getUrl() {
+    return this.url
+  }
+
+  getDescription() {
+    return this.description
+  }
+
+  getStargazersCount() {
+    return this.stargazersCount
+  }
+
+  getForks() {
+    return this.forks
+  }
+
+  getContributions() {
+    return this.contributions
+  }
+
+  getPrimaryLanguage() {
+    return this.language
+  }
+
   getLanguageNames() {
     return this.languages.map((language) => language.getName())
   }
@@ -511,6 +539,13 @@ export class LaprasProfile {
       repository.getLanguageNames(),
     )
     return [...new Set(skills)].slice(0, 12)
+  }
+
+  /**
+   * プロダクト表示などで利用する GitHub リポジトリ情報を取得する。
+   */
+  getGitHubRepositories() {
+    return this.githubRepositories
   }
 
   /**
